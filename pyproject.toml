@@ -31,13 +31,13 @@ license = { file = "LICENSE" }
 maintainers = [
     { email = "merschformann@proton.me", name = "Marius Merschformann" }
 ]
-name = "jpathflat"
+name = "jflat"
 readme = "README.md"
 requires-python = ">=3.11"
 
 [project.urls]
-Homepage = "https://github.com/merschformann/jpathflat"
-Repository = "https://github.com/merschformann/jpathflat"
+Homepage = "https://github.com/merschformann/jflat"
+Repository = "https://github.com/merschformann/jflat"
 
 [tool.hatch.version]
-path = "jpathflat/__about__.py"
+path = "jflat/__about__.py"

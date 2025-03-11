@@ -1,17 +1,17 @@
-# jpathflat
+# jflat
 
 A humble library for flattening Python dictionaries according to their JSON-paths.
 
 ## Installation
 
 ```bash
-pip install jpathflat
+pip install jflat
 ```
 
 ## Usage
 
 ```python
-from jpathflat import flatten, unflatten
+from jflat import flatten, unflatten
 
 data = {
     "a": {
