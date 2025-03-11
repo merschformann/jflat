@@ -1,6 +1,6 @@
 import unittest
 
-from jpathflat import flatten
+from jflat import flatten
 
 
 class TestFlatten(unittest.TestCase):

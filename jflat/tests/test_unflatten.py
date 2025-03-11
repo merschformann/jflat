@@ -1,6 +1,6 @@
 import unittest
 
-from jpathflat import unflatten  # Assuming the previous code is saved in unflatten_map.py
+from jflat import unflatten
 
 
 class TestUnflatten(unittest.TestCase):
