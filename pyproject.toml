@@ -41,3 +41,8 @@ Repository = "https://github.com/merschformann/jflat"
 
 [tool.hatch.version]
 path = "jflat/__about__.py"
+
+[project.optional-dependencies]
+dev = [
+    "ruff"
+]

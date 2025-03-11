@@ -20,9 +20,7 @@ jobs:
       - name: install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pip-tools
-          pip-compile pyproject.toml
-          pip install -r requirements.txt
+          pip install -e .[dev]
 
       - name: unit tests
         run: python -m unittest
