@@ -62,6 +62,12 @@ class TestFlatten(unittest.TestCase):
         }
         self.assertEqual(flatten(nested), expected)
 
+    def test_top_level_list(self):
+        """Test flattening a top level list"""
+        nested = [{"a": "foo", "b": 2}, {"a": "bar", "b": 3}]
+        expected = {"$[0].a": "foo", "$[0].b": 2, "$[1].a": "bar", "$[1].b": 3}
+        self.assertEqual(flatten(nested), expected)
+
 
 if __name__ == "__main__":
     unittest.main()

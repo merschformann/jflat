@@ -62,6 +62,12 @@ class TestUnflatten(unittest.TestCase):
         expected = {"a": "foo", "b": [{"c": "bar", "d": [{"e": 2}, True]}, {"c": "baz", "d": [{"e": 3}, False]}]}
         self.assertEqual(unflatten(flattened), expected)
 
+    def test_top_level_list(self):
+        """Test unflattening a top-level list"""
+        flattened = {"$[0]": "foo", "$[1]": 2, "$[2]": {"a": "bar"}}
+        expected = ["foo", 2, {"a": "bar"}]
+        self.assertEqual(unflatten(flattened), expected)
+
 
 if __name__ == "__main__":
     unittest.main()

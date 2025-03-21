@@ -9,11 +9,21 @@ def flatten(nested):
     Returns:
         dict: A flattened dictionary with JSONPath-style keys
     """
-    flattened = {}
-    for child_key, child_value in nested.items():
-        root_key = f"$.{child_key}"
-        set_children(flattened, root_key, child_value)
-    return flattened
+    # Handle different acceptable root types
+    if isinstance(nested, dict):
+        flattened = {}
+        for child_key, child_value in nested.items():
+            root_key = f"$.{child_key}"
+            set_children(flattened, root_key, child_value)
+        return flattened
+    elif isinstance(nested, list):
+        flattened = {}
+        for child_index, child_value in enumerate(nested):
+            root_key = f"$[{child_index}]"
+            set_children(flattened, root_key, child_value)
+        return flattened
+    else:
+        raise ValueError("Input must be a dictionary or list")
 
 
 def set_children(flattened, parent_key, parent_value):
@@ -27,8 +37,8 @@ def set_children(flattened, parent_key, parent_value):
     """
     new_key = f".{parent_key}"
 
-    # Handle the special case for root level keys starting with "$."
-    if len(parent_key) > 1 and parent_key[0:2] == "$.":
+    # Handle the special case for root level keys
+    if len(parent_key) > 1 and (parent_key[0:2] == "$." or parent_key[0:2] == "$["):
         new_key = parent_key
 
     # Handle None value

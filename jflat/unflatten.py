@@ -56,6 +56,11 @@ def unflatten(flattened):
 
             current[k] = slice_result
 
+    # Handle case of a top-level list
+    if MAGIC_SLICE_KEY in nested:
+        del nested[MAGIC_SLICE_KEY]
+        nested = to_slice(nested)
+
     return nested
 
 
