@@ -68,6 +68,18 @@ class TestFlatten(unittest.TestCase):
         expected = {"$[0].a": "foo", "$[0].b": 2, "$[1].a": "bar", "$[1].b": 3}
         self.assertEqual(flatten(nested), expected)
 
+    def test_empty_containers(self):
+        """Test flattening empty dictionaries and lists, which are kept as values"""
+        nested = {"a": {}, "b": [], "c": [{}, []], "d": {"e": {}}}
+        expected = {"$.a": {}, "$.b": [], "$.c[0]": {}, "$.c[1]": [], "$.d.e": {}}
+        self.assertEqual(flatten(nested), expected)
+
+    def test_nested_slice(self):
+        """Test flattening lists directly nested in lists"""
+        nested = [[1, 2], [{"a": 3}]]
+        expected = {"$[0][0]": 1, "$[0][1]": 2, "$[1][0].a": 3}
+        self.assertEqual(flatten(nested), expected)
+
 
 if __name__ == "__main__":
     unittest.main()
