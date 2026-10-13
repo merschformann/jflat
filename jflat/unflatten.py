@@ -1,3 +1,6 @@
+import re
+
+
 def unflatten(flattened):
     """
     Takes a flattened dictionary with JSONPath-style keys and converts it back to a nested structure.
@@ -6,62 +9,62 @@ def unflatten(flattened):
         flattened (dict): A flattened dictionary with JSONPath-style keys
 
     Returns:
-        dict: A nested dictionary
+        dict | list: A nested dictionary (or list, if the keys describe a top-level list)
+
+    Raises:
+        ValueError: If the keys contradict each other (e.g., a path is used as both a list and a dictionary)
     """
-    # Magic key to mark dictionaries that should be converted to lists
-    MAGIC_SLICE_KEY = "isSlice"
-
-    # First, convert the flat map to a nested map
-    nested = {}
+    # First, collect all values in a tree of nodes (list or dict), tracking the type of each node
+    root = _Node()
     for key, value in flattened.items():
-        p = path_from(key)
-        current = nested
-        for i, k in enumerate(p):
-            key_name = k.key()
-            if k.is_slice():
-                current[MAGIC_SLICE_KEY] = True
+        path = path_from(key)
+        current = root
+        for i, k in enumerate(path):
+            if i == len(path) - 1:
+                current.set(k, value, key)
+            else:
+                current = current.child(k, key)
 
-            is_last = i == len(p) - 1
-            if is_last:
-                current[key_name] = value
-                break
+    # Then, convert the tree to the nested structure
+    if root.is_slice is None:
+        return {}
+    return root.build()
 
-            if key_name not in current:
-                current[key_name] = {}
 
-            current = current[key_name]
+class _Node:
+    """A container node (list or dict) of the structure being unflattened."""
 
-    # Convert dictionaries to lists where appropriate using BFS
-    queue = [nested]
-    while queue:
-        current = queue.pop(0)
-        for k, v in list(current.items()):  # Create a copy of items to avoid modification during iteration
-            if not isinstance(v, dict):
-                # Not a dictionary, we reached the end of the tree
-                continue
+    def __init__(self):
+        self.is_slice = None  # Unknown until the first child is added
+        self.children = {}
 
-            if MAGIC_SLICE_KEY not in v:
-                # Just a normal dictionary, enqueue
-                queue.append(v)
-                continue
+    def _check_type(self, k, key):
+        if self.is_slice is None:
+            self.is_slice = k.is_slice()
+        elif self.is_slice != k.is_slice():
+            raise ValueError(f"Conflicting types at key '{key}': element is used as both a list and a dictionary")
 
-            # A dictionary that needs to be converted to a list
-            del v[MAGIC_SLICE_KEY]
-            slice_result = to_slice(v)
+    def child(self, k, key):
+        """Returns the child container node for the given path key, creating it if necessary."""
+        self._check_type(k, key)
+        child = self.children.setdefault(k.key(), _Node())
+        if not isinstance(child, _Node):
+            raise ValueError(f"Conflicting values at key '{key}': element is both a value and a container")
+        return child
 
-            # Enqueue all dictionaries in the list
-            for item in slice_result:
-                if isinstance(item, dict):
-                    queue.append(item)
+    def set(self, k, value, key):
+        """Sets a leaf value for the given path key."""
+        self._check_type(k, key)
+        if k.key() in self.children:
+            raise ValueError(f"Conflicting values at key '{key}': element is both a value and a container")
+        self.children[k.key()] = value
 
-            current[k] = slice_result
-
-    # Handle case of a top-level list
-    if MAGIC_SLICE_KEY in nested:
-        del nested[MAGIC_SLICE_KEY]
-        nested = to_slice(nested)
-
-    return nested
+    def build(self):
+        """Recursively converts this node into a list or dict."""
+        built = {k: v.build() if isinstance(v, _Node) else v for k, v in self.children.items()}
+        if self.is_slice:
+            return to_slice(built)
+        return built
 
 
 def to_slice(d):
@@ -132,25 +135,31 @@ def path_from(key):
     return path
 
 
+# Matches a key component with an optional name followed by any number of indices, e.g. "users[0][1]"
+_KEY_PATTERN = re.compile(r"^([^\[\]]*)((?:\[\d+\])*)$")
+
+
 def path_keys_from(key):
     """
     Parses a single component of a JSONPath-style key.
 
     Args:
-        key (str): Key component (e.g., "users[0]")
+        key (str): Key component (e.g., "users[0]" or "matrix[0][1]")
 
     Returns:
         list: List of PathKey objects
     """
-    if "[" in key:
-        start = key.index("[")
-        end = key.index("]")
-        index = int(key[start + 1 : end])
+    match = _KEY_PATTERN.match(key)
+    if not match:
+        raise ValueError(f"Invalid key component '{key}'")
 
-        # If there's a name part before the brackets
-        if start > 0:
-            return [PathKey(name=key[:start]), PathKey(index=index)]
-        else:
-            return [PathKey(index=index)]
+    name, indices = match.groups()
+    path = []
 
-    return [PathKey(name=key)]
+    # If there's a name part before the brackets (an empty name is a valid key too, if not followed by indices)
+    if name or not indices:
+        path.append(PathKey(name=name))
+    for index in re.findall(r"\[(\d+)\]", indices):
+        path.append(PathKey(index=int(index)))
+
+    return path

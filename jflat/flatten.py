@@ -48,6 +48,10 @@ def set_children(flattened, parent_key, parent_value):
 
     # Handle dictionary
     if isinstance(parent_value, dict):
+        if len(parent_value) == 0:
+            flattened[new_key] = parent_value
+            return
+
         for child_key, child_value in parent_value.items():
             new_key = f"{parent_key}.{child_key}"
             set_children(flattened, new_key, child_value)
